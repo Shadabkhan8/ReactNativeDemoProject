@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useState } from 'react';
 import {
     View,
@@ -12,14 +10,18 @@ import {
     Platform,
     Image,
     TouchableWithoutFeedback,
+    Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { getStoredOTP, clearStoredOTP } from './utils/storageHelpers';
 
 const EmailVerification = () => {
     const [otp, setOtp] = useState('');
     const inputRef = useRef();
     const navigation = useNavigation();
+    const route = useRoute();
+    const { email } = route.params;
 
     const handleInputChange = (text) => {
         if (text.length <= 4) {
@@ -31,9 +33,14 @@ const EmailVerification = () => {
         inputRef.current?.focus();
     };
 
-    const handleContinue = () => {
-        console.log('OTP Entered:', otp);
-        // Add validation or API call here
+    const handleContinue = async () => {
+        const storedOTP = await getStoredOTP(email);
+        if (otp === storedOTP) {
+            await clearStoredOTP(email);
+            navigation.navigate('ResetPassword', { email });
+        } else {
+            Alert.alert('Invalid OTP', 'The entered OTP is incorrect');
+        }
     };
 
     return (
@@ -58,10 +65,9 @@ const EmailVerification = () => {
                     <Text style={styles.emailHeaderText}>Email verification</Text>
 
                     <Text style={styles.instruction}>
-                        Enter the verification code we sent you on: <Text style={styles.email}>Alberts******@gmail.com</Text>
+                        Enter the verification code we sent to: <Text style={styles.email}>{email}</Text>
                     </Text>
 
-                    {/* Single hidden input */}
                     <TextInput
                         ref={inputRef}
                         style={styles.hiddenInput}
@@ -74,7 +80,6 @@ const EmailVerification = () => {
                         returnKeyType="done"
                     />
 
-                    {/* Touchable boxes */}
                     <TouchableWithoutFeedback onPress={handleBoxPress}>
                         <View style={styles.otpContainer}>
                             {[0, 1, 2, 3].map((i) => (
@@ -85,7 +90,7 @@ const EmailVerification = () => {
                         </View>
                     </TouchableWithoutFeedback>
 
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ResetPassword', { email: 'shadab@gmail.com'})}>
+                    <TouchableOpacity style={styles.button} onPress={handleContinue}>
                         <Text style={styles.buttonText}>Continue</Text>
                     </TouchableOpacity>
                 </ScrollView>
@@ -93,6 +98,8 @@ const EmailVerification = () => {
         </View>
     );
 };
+
+export default EmailVerification;
 
 const styles = StyleSheet.create({
     container: {
@@ -184,4 +191,3 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EmailVerification;

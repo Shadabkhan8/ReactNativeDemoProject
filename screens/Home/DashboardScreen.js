@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { getUsers, logoutUser } from '../utils/storageHelpers';
+import { getUsers, logoutUser, saveUser, deleteUser } from '../utils/storageHelpers';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const DashboardScreen = () => {
@@ -20,7 +20,7 @@ const DashboardScreen = () => {
   useEffect(() => {
     const loadUsers = async () => {
       const data = await getUsers();
-      setUsers(data);
+      setUsers(data || []);
     };
     loadUsers();
   }, []);
@@ -34,34 +34,57 @@ const DashboardScreen = () => {
     navigation.navigate('UserDetails', { user });
   };
 
+  const handleDelete = (emailToDelete) => {
+  Alert.alert('Delete', 'Are you sure you want to delete this user?', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Delete',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          await deleteUser(emailToDelete); // delete from AsyncStorage and logout if needed
+          const updatedUsers = await getUsers(); // fetch updated list
+          setUsers(updatedUsers); // update local state
+        } catch (error) {
+          console.error('Failed to delete user:', error.message);
+        }
+      },
+    },
+  ]);
+};
+
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardContent}
+        onPress={() => handleUserPress(item)}
+      >
+        <Icon name="account" size={24} color="#009688" style={styles.icon} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.email}>{item.email}</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Delete button on right side */}
+      <TouchableOpacity onPress={() => handleDelete(item.email)}>
+        <Icon name="delete" size={24} color="#e53935" />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Registered Users</Text>
       </View>
-
-      {/* Title */}
-      <Text style={styles.title}></Text>
-
+       <Text style={styles.title}></Text>
       <FlatList
         data={users}
         keyExtractor={(item, index) => `${item.email}-${index}`}
         contentContainerStyle={styles.listContainer}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => handleUserPress(item)}
-          >
-            <View style={styles.cardContent}>
-              <Icon name="account" size={24} color="#009688" style={styles.icon} />
-              <View>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.email}>{item.email}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={renderItem}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No users registered yet.</Text>
         }
@@ -92,13 +115,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 20,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#009688',
-    marginVertical: 5,
-    textAlign: 'center',
-  },
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -110,6 +126,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
 
     // iOS Shadow
     shadowColor: '#000',
@@ -123,6 +140,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   icon: {
     marginRight: 12,

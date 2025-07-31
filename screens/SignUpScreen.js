@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -33,11 +32,12 @@ const SignUpScreen = () => {
   });
 
   const [hidePassword, setHidePassword] = useState(true);
-  const [confirmHidePassword, setHideConfirmPassword] = useState(true);
+  const [hideConfirmPassword, setHideConfirmPassword] = useState(true);
   const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    const sanitizedValue = field === 'email' ? value.toLowerCase() : value;
+    setForm(prev => ({ ...prev, [field]: sanitizedValue }));
     setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
@@ -46,36 +46,78 @@ const SignUpScreen = () => {
     let valid = true;
 
     if (!form.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Full name is required';
       valid = false;
     }
 
     if (!form.email.trim()) {
       newErrors.email = 'Email is required';
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+    } else if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(form.email)) {
       newErrors.email = 'Invalid email format';
       valid = false;
     }
 
-    if (!form.phone || !/^\d{10}$/.test(form.phone)) {
-      newErrors.phone = 'Valid 10-digit phone number is required';
+    if (!/^\d{10}$/.test(form.phone)) {
+      newErrors.phone = 'Phone must be exactly 10 digits';
       valid = false;
     }
 
-    ['address', 'state', 'city', 'pin', 'gender', 'education', 'age', 'skill'].forEach(field => {
-      if (!form[field]?.trim()) {
-        newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-        valid = false;
-      }
-    });
+    if (!form.address.trim()) {
+      newErrors.address = 'Address is required';
+      valid = false;
+    }
+
+    if (!form.state.trim()) {
+      newErrors.state = 'State is required';
+      valid = false;
+    }
+
+    if (!form.city.trim()) {
+      newErrors.city = 'City is required';
+      valid = false;
+    }
+
+    if (!/^\d{6}$/.test(form.pin)) {
+      newErrors.pin = 'PIN must be exactly 6 digits';
+      valid = false;
+    }
+
+    if (!form.gender.trim()) {
+      newErrors.gender = 'Gender is required';
+      valid = false;
+    } else if (!['male', 'female', 'other'].includes(form.gender.toLowerCase())) {
+      newErrors.gender = 'Gender must be Male, Female, or Other';
+      valid = false;
+    }
+
+    if (!form.education.trim()) {
+      newErrors.education = 'Education is required';
+      valid = false;
+    }
+
+    if (!form.age.trim() || isNaN(form.age)) {
+      newErrors.age = 'Age must be a number';
+      valid = false;
+    } else if (parseInt(form.age) < 10 || parseInt(form.age) > 100) {
+      newErrors.age = 'Age must be between 10 and 100';
+      valid = false;
+    }
+
+    if (!form.skill.trim()) {
+      newErrors.skill = 'Skill is required';
+      valid = false;
+    }
 
     if (!form.password || form.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
       valid = false;
+    } else if (!/[0-9]/.test(form.password) || !/[!@#$%^&*]/.test(form.password)) {
+      newErrors.password = 'Password must contain a number and special character';
+      valid = false;
     }
 
-    if (!form.confirmPassword || form.confirmPassword !== form.password) {
+    if (form.confirmPassword !== form.password) {
       newErrors.confirmPassword = 'Passwords do not match';
       valid = false;
     }
@@ -90,7 +132,7 @@ const SignUpScreen = () => {
         const { confirmPassword, ...userData } = form;
         await saveUser(userData);
         Alert.alert('Success', 'User registered successfully', [
-          { text: 'OK', onPress: () => navigation.replace('Dashboard') }
+          { text: 'OK', onPress: () => navigation.replace('Dashboard') },
         ]);
       } catch (e) {
         Alert.alert('Registration Failed', e.message);
@@ -100,32 +142,45 @@ const SignUpScreen = () => {
     }
   };
 
-  const renderInput = (label, field, icon, keyboardType = 'default', secure = false) => (
-    <View style={styles.viewContent}>
-      <View style={styles.inputContainer}>
-        <Icon name={icon} size={20} color="#333" style={styles.icon} />
-        <TextInput
-          placeholder={label}
-          value={form[field]}
-          onChangeText={text => handleChange(field, text)}
-          style={styles.input}
-          keyboardType={keyboardType}
-          secureTextEntry={secure}
-        />
-        {field === 'password' && (
-          <TouchableOpacity onPress={() => setHidePassword(!hidePassword)}>
-            <Icon name={hidePassword ? 'eye-off' : 'eye'} size={20} color="#333" />
-          </TouchableOpacity>
-        )}
-        {field === 'confirmPassword' && (
-          <TouchableOpacity onPress={() => setHideConfirmPassword(!confirmHidePassword)}>
-            <Icon name={confirmHidePassword ? 'eye-off' : 'eye'} size={20} color="#333" />
-          </TouchableOpacity>
-        )}
+  const renderInput = (label, field, icon, keyboardType = 'default', isPassword = false) => {
+    const isSecure = isPassword && (field === 'password' ? hidePassword : hideConfirmPassword);
+
+    return (
+      <View style={styles.viewContent}>
+        <View style={styles.inputContainer}>
+          <Icon name={icon} size={20} color="#333" style={styles.icon} />
+          <TextInput
+            placeholder={label}
+            value={form[field]}
+            onChangeText={text => handleChange(field, text)}
+            style={styles.input}
+            keyboardType={keyboardType}
+            secureTextEntry={isSecure}
+          />
+          {isPassword && (
+            <TouchableOpacity
+              onPress={() =>
+                field === 'password'
+                  ? setHidePassword(!hidePassword)
+                  : setHideConfirmPassword(!hideConfirmPassword)
+              }
+            >
+              <Icon
+                name={
+                  (field === 'password' ? hidePassword : hideConfirmPassword)
+                    ? 'eye-off'
+                    : 'eye'
+                }
+                size={20}
+                color="#333"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+        {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
       </View>
-      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -142,19 +197,17 @@ const SignUpScreen = () => {
         {renderInput('State', 'state', 'map')}
         {renderInput('City', 'city', 'city')}
         {renderInput('PIN Code', 'pin', 'form-textbox', 'number-pad')}
-        {renderInput('Gender', 'gender', 'gender-male-female')}
+        {renderInput('Gender (Male/Female/Other)', 'gender', 'gender-male-female')}
         {renderInput('Education', 'education', 'school')}
         {renderInput('Age', 'age', 'calendar-account', 'numeric')}
         {renderInput('Skill', 'skill', 'star')}
         {renderInput('Password', 'password', 'lock', 'default', true)}
         {renderInput('Confirm Password', 'confirmPassword', 'lock-check', 'default', true)}
 
-        {/* Submit */}
         <TouchableOpacity style={styles.loginButton} onPress={handleSubmit}>
           <Text style={styles.loginButtonText}>Register</Text>
         </TouchableOpacity>
 
-        {/* Already have an account */}
         <View style={styles.signupContainer}>
           <Text style={{ color: '#333' }}>Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -165,6 +218,8 @@ const SignUpScreen = () => {
     </View>
   );
 };
+
+export default SignUpScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -250,5 +305,3 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 });
-
-export default SignUpScreen;

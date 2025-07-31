@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import {
     View,
@@ -12,18 +10,26 @@ import {
     KeyboardAvoidingView,
     Platform,
     Image,
+    Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { findUserByEmail } from './utils/storageHelpers';
+import { findUserByEmail, storeOTP } from './utils/storageHelpers';
 
 const ForgotPasswordScreen = () => {
     const [email, setEmail] = useState('');
     const navigation = useNavigation();
 
     const handleReset = async () => {
+        if (!email) {
+            Alert.alert('Error', 'Please enter your email');
+            return;
+        }
         const user = await findUserByEmail(email);
         if (user) {
+            const otp = Math.floor(1000 + Math.random() * 9000).toString();
+            await storeOTP(email, otp);
+            Alert.alert('OTP Sent', `Your OTP is: ${otp}`);
             navigation.navigate('EmailVerification', { email });
         } else {
             Alert.alert('User Not Found', 'No account found with this email');
@@ -67,18 +73,20 @@ const ForgotPasswordScreen = () => {
                             keyboardType="email-address"
                             value={email}
                             onChangeText={setEmail}
+                            autoCapitalize='none'
                         />
                     </View>
 
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ResetPassword', { email })}>
+                    <TouchableOpacity style={styles.button} onPress={handleReset}>
                         <Text style={styles.buttonText}>Continue</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
-        // </SafeAreaView>
     );
 };
+
+export default ForgotPasswordScreen;
 
 const styles = StyleSheet.create({
     container: {
@@ -160,5 +168,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
-
-export default ForgotPasswordScreen;

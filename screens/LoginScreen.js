@@ -79,6 +79,7 @@ const LoginScreen = () => {
               placeholder="Email"
               style={styles.input}
               keyboardType="email-address"
+              autoCapitalize='none'
               value={email}
               onChangeText={setEmail}
             />
