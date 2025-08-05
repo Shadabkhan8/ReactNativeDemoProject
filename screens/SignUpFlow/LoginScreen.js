@@ -50,7 +50,7 @@ const LoginScreen = () => {
       try {
         await loginUser(email, password);
         Alert.alert('Login Success', `Welcome ${email}`, [
-          { text: 'OK', onPress: () => navigation.replace('Dashboard') }
+          { text: 'OK', onPress: () => navigation.replace('MainTabs') }
         ]);
       } catch (e) {
         Alert.alert('Login Failed', e.message);

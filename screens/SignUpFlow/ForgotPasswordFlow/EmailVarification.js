@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getStoredOTP, clearStoredOTP } from './utils/storageHelpers';
+import { getStoredOTP, clearStoredOTP } from '../../utils/storageHelpers';
 
 const EmailVerification = () => {
     const [otp, setOtp] = useState('');

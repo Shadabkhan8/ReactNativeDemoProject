@@ -132,7 +132,7 @@ const SignUpScreen = () => {
         const { confirmPassword, ...userData } = form;
         await saveUser(userData);
         Alert.alert('Success', 'User registered successfully', [
-          { text: 'OK', onPress: () => navigation.replace('Dashboard') },
+          { text: 'OK', onPress: () => navigation.replace('MainTabs') },
         ]);
       } catch (e) {
         Alert.alert('Registration Failed', e.message);

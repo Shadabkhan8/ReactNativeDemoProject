@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { findUserByEmail, storeOTP } from './utils/storageHelpers';
+import { findUserByEmail, storeOTP } from '../../utils/storageHelpers';
 
 const ForgotPasswordScreen = () => {
     const [email, setEmail] = useState('');
